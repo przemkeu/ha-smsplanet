@@ -8,7 +8,11 @@ from typing import TYPE_CHECKING
 from homeassistant.components.sensor import SensorEntity, SensorEntityDescription, SensorStateClass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
 
 from .api import SmsplanetError
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
@@ -35,7 +39,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up SMSPLANET sensors."""
 
-    async def async_update_data() -> int:
+    async def async_update_data() -> float:
         try:
             return (await entry.runtime_data.client.async_get_balance()).balance
         except SmsplanetError as err:
@@ -53,7 +57,7 @@ async def async_setup_entry(
     async_add_entities([SmsplanetBalanceSensor(entry, coordinator)])
 
 
-class SmsplanetBalanceSensor(CoordinatorEntity[DataUpdateCoordinator[int]], SensorEntity):
+class SmsplanetBalanceSensor(CoordinatorEntity[DataUpdateCoordinator[float]], SensorEntity):
     """SMSPLANET PrePaid balance sensor."""
 
     entity_description = BALANCE_DESCRIPTION
@@ -62,7 +66,7 @@ class SmsplanetBalanceSensor(CoordinatorEntity[DataUpdateCoordinator[int]], Sens
     def __init__(
         self,
         entry: SmsplanetConfigEntry,
-        coordinator: DataUpdateCoordinator[int],
+        coordinator: DataUpdateCoordinator[float],
     ) -> None:
         """Initialize the balance sensor."""
         super().__init__(coordinator)
@@ -74,6 +78,6 @@ class SmsplanetBalanceSensor(CoordinatorEntity[DataUpdateCoordinator[int]], Sens
         }
 
     @property
-    def native_value(self) -> int | None:
+    def native_value(self) -> float | None:
         """Return current PrePaid balance."""
         return self.coordinator.data
