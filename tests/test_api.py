@@ -55,7 +55,8 @@ package = types.ModuleType("custom_components.smsplanet")
 package.__path__ = [str(SMSPLANET_PATH)]
 sys.modules.setdefault("custom_components.smsplanet", package)
 
-from custom_components.smsplanet.api import (
+from custom_components.smsplanet.api import (  # noqa: E402 - import after dependency stubs
+    SmsplanetApiError,
     SmsplanetAuthError,
     SmsplanetClient,
     parse_delivery_notification,
@@ -171,3 +172,28 @@ class FakeSession:
         """Record request and return fake response."""
         self.calls.append({"method": method, "url": url, **kwargs})
         return FakeRequestContext(FakeResponse(self._payload))
+
+
+@pytest.mark.parametrize("balance", [0, 42, 12.75, "0", "42", "12.75"])
+@pytest.mark.asyncio
+async def test_get_balance_returns_float(balance: int | float | str) -> None:
+    """Preserve fractional balances and return floats for all numeric inputs."""
+    session = FakeSession({"balance": balance})
+    client = SmsplanetClient(session, "token", base_url="https://example.invalid")
+
+    response = await client.async_get_balance()
+
+    assert isinstance(response.balance, float)
+    assert response.balance == float(balance)
+    assert session.calls[0]["method"] == "POST"
+    assert session.calls[0]["url"] == "https://example.invalid/getBalance"
+
+
+@pytest.mark.parametrize("payload", [{}, {"balance": None}, {"balance": "invalid"}])
+@pytest.mark.asyncio
+async def test_get_balance_rejects_invalid_response(payload: dict[str, object]) -> None:
+    """Invalid balances retain the API error contract."""
+    client = SmsplanetClient(FakeSession(payload), "token")
+
+    with pytest.raises(SmsplanetApiError, match="Invalid balance response"):
+        await client.async_get_balance()
