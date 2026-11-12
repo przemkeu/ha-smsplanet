@@ -34,7 +34,7 @@ class SendMmsResponse:
 class BalanceResponse:
     """PrePaid account balance response."""
 
-    balance: int
+    balance: float
 
 
 @dataclass(frozen=True)
