@@ -77,7 +77,7 @@ class SmsplanetClient:
         """Fetch PrePaid account balance."""
         data = await self._request("POST", "/getBalance")
         try:
-            return BalanceResponse(balance=int(data["balance"]))
+            return BalanceResponse(balance=float(data["balance"]))
         except (KeyError, TypeError, ValueError) as err:
             raise SmsplanetApiError("Invalid balance response") from err
 
